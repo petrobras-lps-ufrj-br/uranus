@@ -1,0 +1,11 @@
+loguru
+jupyterlab
+rich_argparse
+tabulate
+expand_folders
+prefect
+cognite-sdk
+numpy
+pandas
+scikit-learn
+atlas-mpl-style
