@@ -67,24 +67,24 @@ class DataLoader_v1(Dataset):
                 pipeline = self.preprocessors[feature_name]
                 pipeline.fit(feature_df.iloc[indices])
 
-    def __getitem__(self, indices : List[int]) -> List[torch.tensor]:
-        inputs = {}
+    def __getitem__(self, indices : List[int]):
+        inputs = []
         for feature_name in self.input_features:
             pipeline = self.preprocessors[feature_name] if feature_name in self.preprocessors else None 
             data_values = self.data[feature_name].iloc[indices].values.reshape(1, -1)
             data_values  = pipeline.transform(data_values) if pipeline is not None else data_values
             data_values  = torch.tensor(data_values, dtype=torch.float32)
-            inputs[feature_name] = data_values
+            inputs.append(data_values)
 
-        targets = {}
+        targets = []
         for feature_name in self.target_feature:
             pipeline = self.preprocessors[feature_name] if feature_name in self.preprocessors else None 
             data_values = self.data[feature_name].iloc[indices].values.reshape(1, -1)
             data_values  = pipeline.transform(data_values) if pipeline is not None else data_values
             data_values  = torch.tensor(data_values, dtype=torch.float32)
-            targets[feature_name] = data_values
+            targets.append(data_values)
 
-        return inputs, targets
+        return torch.cat(inputs, dim=1), torch.cat(targets, dim=1)
         
     def __len__(self) -> int:
         """

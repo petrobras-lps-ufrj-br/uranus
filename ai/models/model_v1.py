@@ -40,23 +40,20 @@ class Model_v1(pl.LightningModule):
         )
 
     def forward(self, x):
-        x = torch.cat([x[feature_name] for feature_name in self.input_features], dim=1)
         return self.net(x)
 
 
     def training_step(self, batch, batch_idx):
         x, y = batch
-        x = torch.cat([x[feature_name] for feature_name in self.input_features], dim=1)
         y_hat = self(x)
-        loss = self.criterion(y_hat, y[self.target_feature])
+        loss = self.criterion(y_hat, y)
         self.log("train_loss", loss, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
         x, y = batch
-        x = torch.cat([x[feature_name] for feature_name in self.input_features], dim=1)
         y_hat = self(x)
-        loss = self.criterion(y_hat, y[self.target_feature])
+        loss = self.criterion(y_hat, y)
         self.log("val_loss", loss, prog_bar=True)
         return loss
 

@@ -94,9 +94,8 @@ class Trainer:
             # Create Subsets
             train_dataset = torch.utils.data.Subset(dataset, train_index)
             val_dataset   = torch.utils.data.Subset(dataset, val_index)
-
-            train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
-            val_loader   = DataLoader(val_dataset,   batch_size=batch_size, shuffle=False, num_workers=0)
+            train_loader  = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=0)
+            val_loader    = DataLoader(val_dataset,   batch_size=batch_size, shuffle=False, num_workers=0)
 
             # Setup Model
             # Create a fresh copy of the model for this fold
@@ -115,7 +114,7 @@ class Trainer:
                         cb_copy.dirpath = os.path.join(fold_dir, "checkpoints")
                 fold_callbacks.append(cb_copy)
             
-           
+    
             # 5. Initialize Trainer
             trainer = pl.Trainer(
                 max_epochs=num_epochs,

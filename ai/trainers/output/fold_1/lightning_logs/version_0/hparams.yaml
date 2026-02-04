@@ -1,6 +1,0 @@
-criterion: null
-dropout_p: 0.2
-input_dim: 30
-n_hidden: 32
-optimizer: null
-params: null
