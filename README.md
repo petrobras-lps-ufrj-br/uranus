@@ -15,6 +15,7 @@ The codebase is organized into a Python package named `ai` with clear separation
 ```text
 .
 ├── 📂 ai/                  # Core Python package
+│   ├── 📂 callbacks/       # Custom PyTorch Lightning callbacks
 │   ├── 📂 clients/         # External API clients (e.g., Cognite)
 │   ├── 📂 evaluation/      # Metrics and model evaluation tools
 │   ├── 📂 loaders/         # Custom DataLoaders (e.g., Time Series Windowing)
@@ -36,7 +37,11 @@ The codebase is organized into a Python package named `ai` with clear separation
 ## ✨ Key Features
 
 *   **⚡ PyTorch Lightning Integration**: Robust training loops with built-in logging, checkpointing, and GPU support.
-*   **🔄 Automated Cross-Validation**: The `Time Series Trainer` handles CV splits (e.g., TimeSeriesSplit) automatically.
+*   **🔄 Automated Cross-Validation**: The `Time Series Trainer` handles CV splits (e.g., TimeSeriesSplit) automatically and aggregates metrics.
+*   **📊 Rich Logging & Evaluation**: 
+    *   Beautiful ASCII metric tables and emoji-enhanced logs.
+    *   Automatic collection of training and validation loss history.
+    *   Custom `ModelCheckpoint` that saves model state, weights, and detailed history.
 *   **🛠 Advanced Preprocessing**: Modular pipelines using `sktime` and `sklearn` for easy feature engineering (e.g., Lag features, Standard Scaling).
 *   **🧵 Custom DataLoaders**: Flexible loaders that accept raw dataframes and handle windowing and batching on-the-fly.
 
@@ -69,31 +74,100 @@ make jupyter
 
 ---
 
-## 🛠 Usage Example
+## 🏃 Running Training Jobs
 
-Here is a simplified example of how to set up a training pipeline using the `ai` modules:
+The repository provides a versatile script `scripts/job_v1.py` to run training jobs. It supports command-line arguments and JSON configuration files.
+
+### Command Line Arguments
+
+| Argument | Flag | Description | Default |
+| :--- | :--- | :--- | :--- |
+| `csv_path` | `--path`, `-p` | Path to the input CSV file (Required) | `None` |
+| `fold` | `--fold`, `-f` | Specific fold index to train (Optional). If not set, trains all folds. | `None` |
+| `epochs` | `--epochs`, `-e` | Number of training epochs | `20` |
+| `splits` | `--splits`, `-s` | Number of Time Series Cross-Validation splits | `10` |
+| `job_json` | `--job_json`, `-j` | Path to a JSON configuration file (Optional) | `None` |
+
+### Examples
+
+**1. Basic Run:**
+Train on all folds using a specific CSV file.
+
+```bash
+python3 scripts/job_v1.py -p data/compressor.csv
+```
+
+**2. Train Specific Fold:**
+Train only the 3rd fold with 50 epochs.
+
+```bash
+python3 scripts/job_v1.py -p data/compressor.csv -f 3 -e 50
+```
+
+**3. Custom Splits:**
+Train with 5 cross-validation splits.
+
+```bash
+python3 scripts/job_v1.py -p data/compressor.csv -s 5
+```
+
+**4. Using a JSON Config:**
+You can define your job parameters in a `job.json` file:
+
+```json
+{
+    "csv_path": "data/dataset.csv",
+    "fold": 0,
+    "epochs": 100,
+    "splits": 5
+}
+```
+
+Then run it:
+
+```bash
+python3 scripts/job_v1.py -j job.json
+```
+
+---
+
+## 🛠 Python Usage Example
+
+Here is a simplified example of how to set up a training pipeline programmatically using the `ai` modules:
 
 ```python
 import os
 from sklearn.model_selection import TimeSeriesSplit
+from sklearn.preprocessing import StandardScaler
+from sktime.transformations.compose import TransformerPipeline
 from ai.loaders import DataLoader_v1
 from ai.models import Model_v1
 from ai.trainers.time_series import Trainer
-from ai.preprocessing import StandardScale, Lag
+from ai.preprocessing import Lag
 
 # 1. Define Data & Features
-col_names = {"Raw_Sensor_1": "input_1", "Raw_Target": "target"}
-feature_cols = ["input_1"]
-target_col = ["target"]
+features = {
+    "input_1": "Raw_Sensor_1", 
+    "target": "Raw_Target"
+}
+input_names = ["input_1"]
+lags = {
+    "input_1": Lag(10), 
+    "target": Lag(-1)
+}
+preprocessors = {
+    "input_1": TransformerPipeline([("scaler", StandardScaler())]),
+    "target": TransformerPipeline([("scaler", StandardScaler())])
+}
 
-# 2. Initialize DataLoader with Preprocessing
+# 2. Initialize DataLoader
 dataset = DataLoader_v1(
     path="data.csv",
-    features=col_names,
-    input_features=feature_cols,
-    target_feature=target_col,
-    lags={"input_1": Lag(10)}, 
-    preprocessors={"input_1": StandardScale()}
+    features=features,
+    input_features=input_names,
+    target_feature="target",
+    lags=lags, 
+    preprocessors=preprocessors
 )
 
 # 3. Setup Model & Trainer
@@ -105,7 +179,11 @@ trainer = Trainer(
 )
 
 # 4. Train
+# Returns a list of results (metrics & history) for each fold
 trainer.fit(dataset, num_epochs=10)
+
+# 5. Access History
+print(results[0].history['val_loss'])
 ```
 
 ---

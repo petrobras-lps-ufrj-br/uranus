@@ -45,7 +45,7 @@ class DataLoader_v1(Dataset):
 
     def load(self) -> Any:
 
-        df = pd.read_csv(self.path, index_col=0, parse_dates=True)
+        df = pd.read_csv(self.path, index_col=0, parse_dates=True).iloc[0:100]
 
         data = collections.OrderedDict()
 
@@ -68,23 +68,24 @@ class DataLoader_v1(Dataset):
                 pipeline.fit(feature_df.iloc[indices])
 
     def __getitem__(self, indices : List[int]):
-        inputs = []
+
+        inputs = {}
         for feature_name in self.input_features:
             pipeline = self.preprocessors[feature_name] if feature_name in self.preprocessors else None 
             data_values = self.data[feature_name].iloc[indices].values.reshape(1, -1)
             data_values  = pipeline.transform(data_values) if pipeline is not None else data_values
             data_values  = torch.tensor(data_values, dtype=torch.float32)
-            inputs.append(data_values)
+            inputs[feature_name] = data_values
 
-        targets = []
+        targets = {}
         for feature_name in self.target_feature:
             pipeline = self.preprocessors[feature_name] if feature_name in self.preprocessors else None 
             data_values = self.data[feature_name].iloc[indices].values.reshape(1, -1)
             data_values  = pipeline.transform(data_values) if pipeline is not None else data_values
             data_values  = torch.tensor(data_values, dtype=torch.float32)
-            targets.append(data_values)
+            targets[feature_name] = data_values
 
-        return torch.cat(inputs, dim=1), torch.cat(targets, dim=1)
+        return inputs, targets
         
     def __len__(self) -> int:
         """
