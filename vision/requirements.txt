@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+dash
+dash-bootstrap-components
+pandas
+python-multipart
+dash-cytoscape
