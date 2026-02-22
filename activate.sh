@@ -1,9 +1,9 @@
 
-export VIRTUALENV_NAMESPACE='.ai-env'
+export VIRTUALENV_NAMESPACE='.uranus-env'
 export LOGURU_LEVEL="DEBUG"
 export VIRTUALENV_PATH=$PWD/$VIRTUALENV_NAMESPACE
 
-export AI_DATA_PATH=$PWD/data
+export URANUS_DATA_PATH=$PWD/data
 
 if [ -d "$VIRTUALENV_PATH" ]; then
     echo "$VIRTUALENV_PATH exists."

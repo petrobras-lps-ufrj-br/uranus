@@ -210,3 +210,5 @@ __marimo__/
 .aida-env
 *.csv
 *.pdf
+
+.uranus-env

@@ -1,0 +1,65 @@
+services:
+  triton:
+    image: nvcr.io/nvidia/tritonserver:23.10-py3
+    container_name: uranus_triton
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+      - "8002:8002"
+    volumes:
+      - ./data/model_repository:/models
+    command: [ "tritonserver", "--model-repository=/models" ]
+    runtime: nvidia # Required for GPU support
+
+  db:
+    image: postgres:15
+    container_name: uranus_db
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: uranus_data
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: uranus_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: uranus_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - db
+      - influxdb
+
+  influxdb:
+    image: influxdb:2.7
+    container_name: uranus_influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=password123
+      - DOCKER_INFLUXDB_INIT_ORG=uranus_org
+      - DOCKER_INFLUXDB_INIT_BUCKET=uranus_bucket
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=my-super-secret-auth-token
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+
+volumes:
+  postgres_data:
+  influxdb_data:

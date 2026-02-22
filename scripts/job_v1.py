@@ -13,12 +13,12 @@ import pytorch_lightning as pl
 import collections
 
 
-from ai.trainers.time_series import Trainer
-from ai.models.model_v1 import Model_v1
-from ai.evaluation import Summary
-from ai.loaders import DataLoader_v1
-from ai.preprocessing import Lag
-from ai import get_argparser_formatter
+from uranus.ai.trainers.time_series import Trainer
+from uranus.ai.models.model_v1 import Model_v1
+from uranus.ai.evaluation import Summary
+from uranus.ai.loaders import DataLoader_v1
+from uranus.ai.preprocessing import Lag
+from uranus.ai import get_argparser_formatter
 
 
 from torch.utils.data import Dataset
@@ -37,8 +37,8 @@ from sktime.forecasting.model_selection import SlidingWindowSplitter
 from sktime.transformations.series.dropna import DropNA
 from sktime.transformations.series.subset import IndexSubset
 
-from ai.evaluation.summary import Summary
-from ai.callbacks.model_checkpoint import ModelCheckpoint
+from uranus.ai.evaluation.summary import Summary
+from uranus.ai.callbacks.model_checkpoint import ModelCheckpoint
 
 # Argument Parsing
 parser = argparse.ArgumentParser(description="Train Time Series Model", formatter_class=get_argparser_formatter())

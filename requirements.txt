@@ -13,3 +13,12 @@ numpy
 pandas
 tqdm
 prettytable
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+dash
+dash-bootstrap-components
+python-multipart
+dash-cytoscape
+sktime
