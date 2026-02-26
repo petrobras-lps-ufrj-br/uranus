@@ -32,6 +32,12 @@ The codebase is organized into a main package named `uranus`, with sub-packages 
 │   │   ├── 📂 trainers/    # Training loops (Cross-Validation + Lightning)
 │   │   └── 📂 visualization/ # Training and inference visualization tools
 │   └── 📂 display/         # Visualization and dashboard tools
+├── 📂 workflows/           # Orchestration and automated workflows
+│   ├── 📂 airflow/         # Airflow-specific configuration
+│   │   ├── 📂 dags/        # Data pipelines (DAGs)
+│   │   ├── 📂 logs/        # Execution logs
+│   │   └── 📂 plugins/     # Custom Airflow operators/hooks
+│   └── 📂 model_repository/ # Triton Model assets and configs
 │
 ├── 📂 notebooks/           # Jupyter Notebooks for exploration and demos
 ├── 📂 scripts/             # Helper scripts
@@ -146,25 +152,32 @@ python3 scripts/job_v1.py -j job.json
 
 ### 🏗 Model Repository
 
-Models should be placed in the `data/model_repository/` directory following this schema:
+Models should be placed in the `workflows/model_repository/` directory following this schema:
 
 ```text
-data/model_repository/
+workflows/model_repository/
 └── <model_name>/
     ├── config.pbtxt        # Model configuration
     └── 1/                  # Version number
         └── model.pt        # Model file
 ```
 
-For more details, see [data/model_repository/README.md](data/model_repository/README.md).
+For more details, see [workflows/model_repository/README.md](workflows/model_repository/README.md).
 
 ### 🐳 Deployment
 
-To start the full stack (Database, Grafana, InfluxDB, and Triton):
+To start the full stack (Database, Grafana, InfluxDB, Triton, and **Airflow**):
 
 ```bash
 docker-compose up -d
 ```
+
+### 🌪 Airflow Orchestration
+
+Airflow is used to schedule and monitor the end-to-end data pipelines.
+*   **Access**: [http://localhost:8081](http://localhost:8081)
+*   **Credentials**: `admin` / `admin`
+*   **DAGs Location**: `workflows/airflow/dags/`
 
 ---
 
@@ -193,7 +206,7 @@ from sklearn.model_selection import TimeSeriesSplit
 from sklearn.preprocessing import StandardScaler
 from sktime.transformations.compose import TransformerPipeline
 from uranus.ai.loaders import DataLoader_v1
-from uranus.ai.models import Model_v1
+from uranus.ai.models import MLP_v1
 from uranus.ai.trainers.time_series import Trainer
 from uranus.ai.preprocessing import Lag
 
@@ -223,7 +236,7 @@ dataset = DataLoader_v1(
 )
 
 # 3. Setup Model & Trainer
-model = Model_v1(dataset=dataset, n_hidden=32)
+model = MLP_v1(dataset=dataset, n_hidden=32)
 trainer = Trainer(
     model=model,
     cv_strategy=TimeSeriesSplit(n_splits=4),

@@ -212,3 +212,7 @@ __marimo__/
 *.pdf
 
 .uranus-env
+
+# Airflow
+workflows/airflow/logs/
+workflows/airflow/config/

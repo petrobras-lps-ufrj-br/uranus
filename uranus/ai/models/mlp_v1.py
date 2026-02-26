@@ -1,5 +1,5 @@
 __all__ = [
-    "Model_v1",
+    "MLP_v1",
 ]
 
 import pytorch_lightning as pl
@@ -8,7 +8,7 @@ import torch.nn as nn
 
 from typing import Any
 
-class Model_v1(pl.LightningModule):
+class MLP_v1(pl.LightningModule):
     """
     A simple MLP model with structure: Dense(n_hidden) -> ReLU -> Dropout(p) -> Dense(1).
     """

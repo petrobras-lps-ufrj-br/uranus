@@ -206,7 +206,7 @@ if __name__ == "__main__":
     from sklearn.model_selection import TimeSeriesSplit
     from uranus.ai.preprocessing import StandardScale, create_window_dataframe, interpolate
     from uranus.ai.trainers.time_series import Trainer
-    from uranus.ai.models.model_v1 import Model_v1
+    from uranus.ai.models.mlp_v1 import MLP_v1
     from uranus.ai.evaluation import Summary
     from uranus.ai.loaders import DataLoader_v1
     import torch.nn as nn
@@ -237,7 +237,7 @@ if __name__ == "__main__":
 
     print(dataset.inputs.shape)
 
-    model = Model_v1(input_dim=dataset.inputs.shape[1], n_hidden=32)
+    model = MLP_v1(input_dim=dataset.inputs.shape[1], n_hidden=32)
     evaluators = [Summary(name="metrics")]
     params = {
         "batch_size": 32,

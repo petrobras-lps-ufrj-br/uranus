@@ -3,7 +3,7 @@
 Triton Inference Server requires a specific directory structure to discover and load models. Below is the proposed schema for **Uranus**:
 
 ```text
-data/model_repository/
+workflows/model_repository/
 ├── <model_name>/
 │   ├── config.pbtxt        # Model configuration (backend, inputs, outputs)
 │   ├── 1/                  # Version number (must be numeric)

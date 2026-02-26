@@ -14,7 +14,7 @@ import collections
 
 
 from uranus.ai.trainers.time_series import Trainer
-from uranus.ai.models.model_v1 import Model_v1
+from uranus.ai.models.mlp_v1 import MLP_v1
 from uranus.ai.evaluation import Summary
 from uranus.ai.loaders import DataLoader_v1
 from uranus.ai.preprocessing import Lag
@@ -104,7 +104,7 @@ dataset = DataLoader_v1(data_path, features, input_names, 'target', lags, prepro
 
 cv = TimeSeriesSplit(splits)
 
-model = Model_v1(dataset, n_hidden=2)
+model = MLP_v1(dataset, n_hidden=2)
 
 callbacks = [
     pl.callbacks.EarlyStopping(monitor="val_loss", min_delta=0.00, patience=3, verbose=False, mode="min")
