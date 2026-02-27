@@ -60,9 +60,6 @@ class MLP_v1(pl.LightningModule):
         y = { feature_name: torch.stack([ row[1][feature_name] for row in batch ]) for feature_name in self.target_feature }
         y = torch.cat([y[feature_name] for feature_name in self.target_feature], dim=2) # [batch_size, 1, 1]
         y = torch.squeeze(y, dim=1) # [batch_size, 1]
-
-        x = x.to(self.device)
-        y = y.to(self.device)
         return x, y
 
     def forward(self, x):

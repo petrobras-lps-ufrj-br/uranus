@@ -121,7 +121,7 @@ dataset = DataLoader_v1(data_path,
                         'target', 
                         lags, 
                         preprocessors, 
-                        transform_before_train=True,
+                        device='cuda' if torch.cuda.is_available() else 'cpu',
                         dry_run_with=args.dry_run_with)
 
 cv = TimeSeriesSplit(splits)
@@ -137,6 +137,6 @@ evaluators = [
     Monitor("Monitor"),
 ]
 
-trainer = Trainer(model, cv, callbacks=callbacks, evaluators=evaluators)
+trainer = Trainer(model, cv, callbacks=callbacks, evaluators=evaluators, devices="auto")
 
 trainer.fit(dataset, num_epochs=epochs, batch_size=batch_size, specific_fold=fold)
