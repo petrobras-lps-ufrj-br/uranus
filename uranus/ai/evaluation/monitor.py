@@ -72,9 +72,8 @@ class Monitor:
 
         ampl.use_atlas_style()
 
-        print(model_history.keys())
         logger.info("Plotting loss history...")
-        # Plotting
+        # Plotting loss history
         fig, axes = plt.subplots(1, 1, figsize=(16, 6))
         # Loss plot
         if "loss" in model_history and "val_loss" in model_history:
@@ -96,20 +95,21 @@ class Monitor:
             axes.set_title("Loss history not available")
 
         plt.tight_layout()
-
-       
         # Save plot to PDF
         save_path = os.path.join(basepath, "loss_history.pdf")
         logger.info(f"💾 Saving loss history plot to {save_path}")
         plt.savefig(save_path)
 
         if mlflow_active:
+            mlflow.log_figure(fig, "loss_history.pdf")
 
-            #html_str = mpld3.fig_to_html(fig)
-            # Save the HTML string to a file
-            #with open(f"{basepath}/loss_history.html", "w") as f:
-            #    f.write(html_str)
-            mlflow.log_artifact(f"{basepath}/loss_history.pdf")
+        plt.close(fig)
+
+        #
+        # Need to be implemented
+        #
+
+        # include y and y_hat superimposed plot with errors into the legend.
 
         # include distribution error plot.
 

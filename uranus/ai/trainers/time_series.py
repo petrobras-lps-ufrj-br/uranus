@@ -200,7 +200,7 @@ class Trainer:
             }
             
             for evaluator in self.evaluators:
-                evaluator(ctx , mlflow_active=mlflow_active )
+                ctx = evaluator(ctx , mlflow_active=mlflow_active )
             
             if save_model:
                 # 7. Save Final Model Weights and Metrics
