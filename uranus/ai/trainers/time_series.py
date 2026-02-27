@@ -2,6 +2,7 @@ import copy
 import os
 import mlflow
 import requests
+import multiprocessing
 from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
@@ -36,6 +37,7 @@ class Trainer:
         checkpoint_filename: str = "last_model.pth",
         experiment_name: str = "mlp_v1",
         use_mlflow: bool = True,
+        num_workers : int = multiprocessing.cpu_count(),
     ):
         """
         Args:
@@ -64,7 +66,7 @@ class Trainer:
             save_weights_only=True
         )
         self.callbacks.append(self.checkpoint)
-        
+        self.num_workers = num_workers
      
         self.experiment_name = experiment_name
         self.use_mlflow = use_mlflow
@@ -163,8 +165,8 @@ class Trainer:
             val_dataset   = torch.utils.data.Subset(dataset, val_index)
             def custom_collate(batch):
                 return batch
-            train_loader  = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=0, collate_fn=custom_collate)
-            val_loader    = DataLoader(val_dataset,   batch_size=batch_size, shuffle=False, num_workers=0, collate_fn=custom_collate)
+            train_loader  = DataLoader(train_dataset, batch_size=batch_size, shuffle=False, num_workers=self.num_workers, collate_fn=custom_collate)
+            val_loader    = DataLoader(val_dataset,   batch_size=batch_size, shuffle=False, num_workers=self.num_workers, collate_fn=custom_collate)
     
             # 5. Initialize Trainer
             trainer_fold = pl.Trainer(

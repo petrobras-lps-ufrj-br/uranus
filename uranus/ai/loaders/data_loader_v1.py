@@ -25,6 +25,7 @@ class DataLoader_v1(Dataset):
         lags                   : Dict[str,str],
         preprocessors          : Dict[str,str],
         dry_run_with           : Optional[int] = None,
+        transform_before_train : Optional[bool] = True,
         ):
         """
         Initializes the DataLoader.
@@ -40,6 +41,7 @@ class DataLoader_v1(Dataset):
         self.lags = lags
         self.data = self.load(dry_run_with)
         self.preprocessors = preprocessors
+        self.transform_before_train = transform_before_train
 
     def index(self):
         return self.data[[*self.features][0]].index
@@ -65,19 +67,22 @@ class DataLoader_v1(Dataset):
         data = {feature_name:feature_df.loc[index] for feature_name, feature_df in data.items()}
         return data
 
-    def fit(self, indices : List[int] ):
+    def fit(self, indices : List[int]):
         for feature_name, feature_df in self.data.items():
             if feature_name in self.preprocessors:
                 pipeline = self.preprocessors[feature_name]
                 pipeline.fit(feature_df.iloc[indices])
+                if self.transform_before_train:
+                    self.data[feature_name] = pipeline.transform(feature_df)
+
 
     def __getitem__(self, indices : List[int]):
-
         inputs = {}
         for feature_name in self.input_features:
             pipeline = self.preprocessors[feature_name] if feature_name in self.preprocessors else None 
             data_values = self.data[feature_name].iloc[indices].values.reshape(1, -1)
-            data_values  = pipeline.transform(data_values) if pipeline is not None else data_values
+            if not self.transform_before_train:
+                data_values  = pipeline.transform(data_values) if pipeline is not None else data_values
             data_values  = torch.tensor(data_values, dtype=torch.float32)
             inputs[feature_name] = data_values
 
@@ -85,10 +90,10 @@ class DataLoader_v1(Dataset):
         for feature_name in self.target_feature:
             pipeline = self.preprocessors[feature_name] if feature_name in self.preprocessors else None 
             data_values = self.data[feature_name].iloc[indices].values.reshape(1, -1)
-            data_values  = pipeline.transform(data_values) if pipeline is not None else data_values
+            if not self.transform_before_train:
+                data_values  = pipeline.transform(data_values) if pipeline is not None else data_values
             data_values  = torch.tensor(data_values, dtype=torch.float32)
             targets[feature_name] = data_values
-
         return inputs, targets
         
     def __len__(self) -> int:
@@ -96,3 +101,5 @@ class DataLoader_v1(Dataset):
         Returns the number of samples in the dataset.
         """
         return len(self.data[[*self.features][0]])
+
+

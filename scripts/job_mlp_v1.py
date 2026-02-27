@@ -41,6 +41,16 @@ from uranus.ai.evaluation.summary import Summary
 from uranus.ai.callbacks.model_checkpoint import ModelCheckpoint
 from uranus.ai.evaluation.monitor import Monitor
 
+print(f"--- Available Devices ---")
+print(f"CPU: available")
+if torch.cuda.is_available():
+    print(f"CUDA: available ({torch.cuda.device_count()} device(s))")
+    for i in range(torch.cuda.device_count()):
+        print(f"  - Device {i}: {torch.cuda.get_device_name(i)}")
+else:
+    print(f"CUDA: not available")
+print(f"--------------------------")
+
 # Argument Parsing
 parser = argparse.ArgumentParser(description="Train Time Series Model", formatter_class=get_argparser_formatter())
 parser.add_argument("--path", "-p", dest="csv_path", type=str, default=None, help="Path to the CSV file")
@@ -50,21 +60,24 @@ parser.add_argument("--splits", "-s", dest="splits", type=int, default=10, help=
 parser.add_argument("--job_json", "-j", dest="job_json", type=str, default=None, help="Path to a JSON job configuration file")
 
 parser.add_argument("--dry_run_with", "-d", dest="dry_run_with", type=int, default=None, help="Number of rows to use for dry run")
+parser.add_argument("--batch_size", "-b", dest="batch_size", type=int, default=32, help="Batch size for training")
 args = parser.parse_args()
 
-data_path = args.csv_path
-fold      = args.fold
-epochs    = args.epochs
-splits    = args.splits
+data_path  = args.csv_path
+fold       = args.fold
+epochs     = args.epochs
+splits     = args.splits
+batch_size = args.batch_size
 
 if args.job_json:
     if os.path.exists(args.job_json):
         with open(args.job_json, 'r') as f:
             job_config = json.load(f)
-        data_path = job_config.get("csv_path", data_path)
-        fold      = job_config.get("fold", fold)
-        epochs    = job_config.get("epochs", epochs)
-        splits    = job_config.get("splits", splits)
+        data_path  = job_config.get("csv_path", data_path)
+        fold       = job_config.get("fold", fold)
+        epochs     = job_config.get("epochs", epochs)
+        splits     = job_config.get("splits", splits)
+        batch_size = job_config.get("batch_size", batch_size)
 
 if len(sys.argv) == 1:
     parser.print_help()
@@ -108,6 +121,7 @@ dataset = DataLoader_v1(data_path,
                         'target', 
                         lags, 
                         preprocessors, 
+                        transform_before_train=True,
                         dry_run_with=args.dry_run_with)
 
 cv = TimeSeriesSplit(splits)
@@ -125,4 +139,4 @@ evaluators = [
 
 trainer = Trainer(model, cv, callbacks=callbacks, evaluators=evaluators)
 
-trainer.fit(dataset, num_epochs=epochs, specific_fold=fold)
+trainer.fit(dataset, num_epochs=epochs, batch_size=batch_size, specific_fold=fold)

@@ -4,7 +4,6 @@ __all__ = [
 
 import os
 import mlflow
-import mpld3
 import numpy as np
 import torch
 import torch.nn as nn
