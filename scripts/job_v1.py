@@ -18,7 +18,7 @@ from uranus.ai.models.mlp_v1 import MLP_v1
 from uranus.ai.evaluation import Summary
 from uranus.ai.loaders import DataLoader_v1
 from uranus.ai.preprocessing import Lag
-from uranus.ai import get_argparser_formatter
+from uranus import get_argparser_formatter
 
 
 from torch.utils.data import Dataset
@@ -39,6 +39,7 @@ from sktime.transformations.series.subset import IndexSubset
 
 from uranus.ai.evaluation.summary import Summary
 from uranus.ai.callbacks.model_checkpoint import ModelCheckpoint
+from uranus.ai.evaluation.monitor import Monitor
 
 # Argument Parsing
 parser = argparse.ArgumentParser(description="Train Time Series Model", formatter_class=get_argparser_formatter())
@@ -48,6 +49,7 @@ parser.add_argument("--epochs", "-e", dest="epochs", type=int, default=20, help=
 parser.add_argument("--splits", "-s", dest="splits", type=int, default=10, help="Number of splits for TimeSeriesSplit")
 parser.add_argument("--job_json", "-j", dest="job_json", type=str, default=None, help="Path to a JSON job configuration file")
 
+parser.add_argument("--dry_run_with", "-d", dest="dry_run_with", type=int, default=None, help="Number of rows to use for dry run")
 args = parser.parse_args()
 
 data_path = args.csv_path
@@ -100,7 +102,13 @@ preprocessors = {
 input_names = ['input', 'extra_1', 'extra_2', 'extra_3']
 target_name = 'target'
 
-dataset = DataLoader_v1(data_path, features, input_names, 'target', lags, preprocessors)
+dataset = DataLoader_v1(data_path, 
+                        features, 
+                        input_names, 
+                        'target', 
+                        lags, 
+                        preprocessors, 
+                        dry_run_with=args.dry_run_with)
 
 cv = TimeSeriesSplit(splits)
 
@@ -112,6 +120,7 @@ callbacks = [
 
 evaluators = [
     Summary("Summary"),
+    Monitor("Monitor"),
 ]
 
 trainer = Trainer(model, cv, callbacks=callbacks, evaluators=evaluators)

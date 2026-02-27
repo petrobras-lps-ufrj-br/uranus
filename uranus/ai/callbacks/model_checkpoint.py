@@ -90,6 +90,7 @@ class ModelCheckpoint(Callback):
         # Save history if available
         if hasattr(pl_module, 'history'):
             checkpoint['history'] = pl_module.history
+            pl_module.history["best_epoch"] = trainer.current_epoch 
             
         logger.info(f"⭐ Saving new best model to {filepath} with {self.monitor}={self.best_score:.4f}")
         torch.save(checkpoint, filepath)

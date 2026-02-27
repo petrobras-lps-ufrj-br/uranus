@@ -2,10 +2,12 @@ __all__ = [
     "Summary",
 ]
 
-from typing import Any, Dict, Optional, Union
+import mlflow
 import numpy as np
 import torch
 import torch.nn as nn
+
+from typing import Any, Dict, Optional, Union
 from sklearn.metrics import mean_squared_error, mean_absolute_percentage_error, mean_absolute_error, r2_score
 from tqdm import tqdm as progress_bar
 from prettytable import PrettyTable
@@ -23,7 +25,7 @@ class Summary:
         """
         self.name = name
 
-    def __call__(self, model: nn.Module, train_loader: DataLoader, val_loader: DataLoader) -> Dict[str, float]:
+    def __call__(self, ctx: Dict[str, Any], mlflow_active: bool = False) -> Dict[str, Any]:
         """
         Computes various time series metrics: MSE, MAE, MAPE, R2.
         
@@ -31,7 +33,14 @@ class Summary:
             Dictionary containing the calculated metrics.
         """
         # Ensure model is in eval mode
+        model = ctx["pl_module"]
         model.eval()
+
+        train_loader  = ctx["train_loader"]
+        val_loader    = ctx["val_loader"]
+        fold_dir      = ctx["fold_dir"]
+        model_history = ctx["history"]
+
         history      = {}
         y_train_pred = []
         y_train_true = []
@@ -72,4 +81,9 @@ class Summary:
         t.add_row(["R2"  , f"{history['r2']:.4f}"  , f"{history['val_r2']:.4f}"]   )
         print("\n" + str(t) + "\n")
 
-        return history
+        model_history[self.name] = history
+
+        if mlflow_active:
+            mlflow.log_metrics(history)
+
+        return ctx

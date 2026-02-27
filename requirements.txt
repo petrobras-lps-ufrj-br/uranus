@@ -22,3 +22,4 @@ dash-bootstrap-components
 python-multipart
 dash-cytoscape
 sktime
+mlflow

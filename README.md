@@ -16,7 +16,7 @@ It abstracts away common boilerplate code for data loading, preprocessing, and t
 
 ## 📂 Repository Structure
 
-The codebase is organized into a main package named `uranus`, with sub-packages for AI and visualization:
+The codebase is organized into a main package named `uranus`, with infrastructure and orchestration handled by dedicated directories:
 
 ```text
 .
@@ -31,18 +31,20 @@ The codebase is organized into a main package named `uranus`, with sub-packages 
 │   │   ├── 📂 runners/     # Scripts to execute training/inference jobs
 │   │   ├── 📂 trainers/    # Training loops (Cross-Validation + Lightning)
 │   │   └── 📂 visualization/ # Training and inference visualization tools
-│   └── 📂 display/         # Visualization and dashboard tools
-├── 📂 workflows/           # Orchestration and automated workflows
-│   ├── 📂 airflow/         # Airflow-specific configuration
-│   │   ├── 📂 dags/        # Data pipelines (DAGs)
-│   │   ├── 📂 logs/        # Execution logs
-│   │   └── 📂 plugins/     # Custom Airflow operators/hooks
-│   └── 📂 model_repository/ # Triton Model assets and configs
-│
+├── 📂 uranus/              # AI framework (Core logic, Trainers, Models)
+├── 📂 servers/             # Infrastructure services (Postgres, Airflow, Triton, Grafana)
+│   ├── 📂 workflows/       # Orchestration and automated workflows
+│   │   ├── 📂 airflow/     # Airflow DAGs, logs, and plugins
+│   │   └── 📂 model_repository/ # Triton Model assets and configs
+│   ├── 📜 docker-compose.yml
+│   └── 📜 README.md        # Infrastructure documentation
 ├── 📂 notebooks/           # Jupyter Notebooks for exploration and demos
 ├── 📂 scripts/             # Helper scripts
+├── 📂 data/                # Raw data files (e.g., compressor.csv)
 ├── 📜 activate.sh          # Environment setup script
-├── 📜 Makefile             # Shortcuts for installation and running
+├── 📜 Makefile             # Shortcuts for orchestration and environment
+├── 📜 docker-compose.yml   # MLflow tracking server
+├── 📜 Dockerfile.mlflow    # Custom MLflow image with Postgres support
 └── 📜 requirements.txt     # Python dependencies
 ```
 
@@ -62,6 +64,22 @@ The codebase is organized into a main package named `uranus`, with sub-packages 
 
 ---
 
+## ⚙️ Environment Configuration
+
+The `activate.sh` script manages several environment variables required for both local development and Docker orchestration. These are automatically loaded when you run `make` or `source activate.sh`.
+
+| Variable | Description | Default Value |
+| :--- | :--- | :--- |
+| `VIRTUALENV_NAMESPACE`| Name of the virtualenv directory | `.uranus-env` |
+| `LOGURU_LEVEL` | Logging verbosity level | `DEBUG` |
+| `URANUS_DATA_PATH` | Path to the raw data directory | `./data` |
+| `MLFLOW_PORT` | Host port for the MLflow server | `8000` |
+| `MLFLOW_TRACKING_URI` | URL of the MLflow tracking server | `http://localhost:8000` |
+| `MLFLOW_ARTIFACT_PATH`| Directory for storing model artifacts | `./mlartifacts` |
+| `MLFLOW_DB_PATH` | Path to the local SQLite database | `./mlflow.db` |
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -71,13 +89,17 @@ The codebase is organized into a main package named `uranus`, with sub-packages 
 
 ### Installation
 
-To set up the environment and install dependencies, simply run:
-
-```bash
-make
-```
-
 This command will source `activate.sh`, create a virtual environment in `.uranus-env` (if it doesn't exist), and install the required packages.
+
+### 🛠 Makefile Shortcuts
+
+| Command | Description |
+| :--- | :--- |
+| `make` | Initialize environment and install dependencies |
+| `make jupyter` | Launch Jupyter Lab instance |
+| `make mlflow-up` | Start MLflow server (Port 5000) and its database |
+| `make mlflow-down` | Stop and remove MLflow containers |
+| `make clean` | Remove virtual environments and build artifacts |
 
 ### 📓 Running Notebooks
 
@@ -146,53 +168,57 @@ python3 scripts/job_v1.py -j job.json
 
 ---
 
-## 📡 In-Production Inference (Triton)
+## 📈 MLflow Tracking
 
-**Uranus** integrates with **NVIDIA Triton Inference Server** for high-performance model serving. 
+**Uranus** uses **MLflow** for experiment tracking, model versioning, and artifact storage.
 
-### 🏗 Model Repository
+### 🚀 Starting the Server
 
-Models should be placed in the `workflows/model_repository/` directory following this schema:
-
-```text
-workflows/model_repository/
-└── <model_name>/
-    ├── config.pbtxt        # Model configuration
-    └── 1/                  # Version number
-        └── model.pt        # Model file
-```
-
-For more details, see [workflows/model_repository/README.md](workflows/model_repository/README.md).
-
-### 🐳 Deployment
-
-To start the full stack (Database, Grafana, InfluxDB, Triton, and **Airflow**):
+To start the local MLflow server (runs in the background using SQLite):
 
 ```bash
-docker-compose up -d
+make mlflow-up
 ```
 
-### 🌪 Airflow Orchestration
+*   **UI Access**: [http://localhost:8000](http://localhost:8000)
+*   **Backend**: SQLite (stored in `mlflow.db`)
+*   **Artifacts**: Locally stored in `mlartifacts/`
+*   **Logs**: Server output is piped to `mlflow_server.log`
 
-Airflow is used to schedule and monitor the end-to-end data pipelines.
-*   **Access**: [http://localhost:8081](http://localhost:8081)
-*   **Credentials**: `admin` / `admin`
-*   **DAGs Location**: `workflows/airflow/dags/`
+To stop the background server:
+
+```bash
+make mlflow-down
+```
+
+### 🛠 Setup & Usage
+
+1.  **Initialize Environment**:
+    ```bash
+    source activate.sh
+    ```
+2.  **Start Services**:
+    ```bash
+    make mlflow-up
+    ```
+3.  **Python Integration**:
+    No manual setup is needed in your Python scripts. Simply import `mlflow` and it will use the tracking URI from your environment:
+    ```python
+    import mlflow
+    
+    with mlflow.start_run():
+        mlflow.log_param("sample_rate", 44100)
+        mlflow.log_metric("accuracy", 0.95)
+    ```
 
 ---
 
-## 🖥 Display & Visualization
+## 🏗 Infrastructure & Servers
 
-The `uranus.display` module provides a powerful, configurable dashboard for real-time monitoring and data interaction.
+The Uranus ecosystem relies on several external services for data storage, orchestration, and inference. These are managed within the `servers/` directory.
 
-### 📊 Key Capabilities
-
-*   **📈 Time Series Visualization**: Interactive plots to monitor sensor data, model inputs, and forecasting results.
-*   **🚨 Alarm System**: Configurable threshold-based alarms to notify users of anomalies or performance degradation.
-*   **⚙️ Configurable Server**: A flexible FastAPI backend that serves as the integration point for data collection and visualization.
-*   **🛠 Model Adaptation**: Tools to visualize model drift and facilitate manual or automated adjustments to the inference pipeline.
-
-For detailed configuration, see the [uranus/display/README.md](uranus/display/README.md).
+For detailed information on **Airflow**, **NVIDIA Triton**, **PostgreSQL**, and **monitoring tools**, please refer to:
+👉 [**servers/README.md**](servers/README.md)
 
 ---
 

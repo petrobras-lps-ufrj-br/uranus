@@ -23,7 +23,8 @@ class DataLoader_v1(Dataset):
         input_features         : List[str],
         target_feature         : List[str],
         lags                   : Dict[str,str],
-        preprocessors          : Dict[str,str]
+        preprocessors          : Dict[str,str],
+        dry_run_with           : Optional[int] = None,
         ):
         """
         Initializes the DataLoader.
@@ -37,15 +38,18 @@ class DataLoader_v1(Dataset):
         self.input_features = input_features if type(input_features) == list else [input_features]
         self.target_feature = target_feature if type(target_feature) == list else [target_feature]
         self.lags = lags
-        self.data = self.load()
+        self.data = self.load(dry_run_with)
         self.preprocessors = preprocessors
 
     def index(self):
         return self.data[[*self.features][0]].index
 
-    def load(self) -> Any:
+    def load(self, dry_run_with : Optional[int] = None) -> Any:
 
-        df = pd.read_csv(self.path, index_col=0, parse_dates=True)#.iloc[0:100]
+        if dry_run_with is not None:
+            df = pd.read_csv(self.path, index_col=0, parse_dates=True).iloc[0:dry_run_with]
+        else:
+            df = pd.read_csv(self.path, index_col=0, parse_dates=True)
 
         data = collections.OrderedDict()
 
