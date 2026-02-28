@@ -58,16 +58,9 @@ class Trainer:
         self.output_dir = output_dir
         self.output_filename = output_filename
         self.checkpoint_filename = checkpoint_filename
-        self.checkpoint = ModelCheckpoint(
-            dirpath=self.output_dir,
-            monitor=checkpoint_metric,
-            mode=checkpoint_mode,
-            filename=self.checkpoint_filename,
-            save_weights_only=True
-        )
-        self.callbacks.append(self.checkpoint)
+        self.checkpoint_metric = checkpoint_metric
+        self.checkpoint_mode = checkpoint_mode
         self.num_workers = num_workers
-     
         self.experiment_name = experiment_name
         self.use_mlflow = use_mlflow
 
@@ -152,8 +145,16 @@ class Trainer:
                 cb_copy = copy.deepcopy(cb)
                 fold_callbacks.append(cb_copy)
             
-            # the last callback is the checkpoint
-            fold_callbacks[-1].dirpath = fold_dir
+
+            checkpoint = ModelCheckpoint(
+                dirpath=fold_dir,
+                monitor=self.checkpoint_metric,
+                mode=self.checkpoint_mode,
+                filename=self.checkpoint_filename,
+                save_weights_only=True
+            )
+            fold_callbacks.append(checkpoint)
+          
             
             if mlflow_active:
                 logger.info(f"🚀 Starting MLflow run for Fold {fold}/{total_splits}")

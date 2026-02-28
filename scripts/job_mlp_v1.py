@@ -4,6 +4,7 @@ import sys
 import os
 import argparse
 import json
+import shutil
 
 import pandas as pd
 import numpy as np
@@ -12,8 +13,8 @@ import torch
 import pytorch_lightning as pl
 import collections
 
-
-from uranus.ai.trainers.time_series import Trainer
+from pathlib import Path
+from uranus.ai.trainers.forecasting import Trainer
 from uranus.ai.models.mlp_v1 import MLP_v1
 from uranus.ai.evaluation import Summary
 from uranus.ai.loaders import DataLoader_v1
@@ -61,6 +62,10 @@ parser.add_argument("--job_json", "-j", dest="job_json", type=str, default=None,
 
 parser.add_argument("--dry_run_with", "-d", dest="dry_run_with", type=int, default=None, help="Number of rows to use for dry run")
 parser.add_argument("--batch_size", "-b", dest="batch_size", type=int, default=32, help="Batch size for training")
+
+parser.add_argument("--output_dir", "-o", dest="output_dir", type=str, default=os.getcwd()+"/training_artifacts", help="Directory to save the results")
+
+
 args = parser.parse_args()
 
 data_path  = args.csv_path
@@ -87,7 +92,17 @@ if not os.path.exists(data_path):
     raise ValueError(f"Data path not found: {data_path}")
 
 
-   
+
+def is_archive(filename):
+    path_suffixes = Path(filename).suffixes
+    return ".tar" in path_suffixes or ".zip" in path_suffixes or ".tgz" in path_suffixes
+
+suffixe = Path(args.output_dir).suffixes[-1]
+zip_folder = True if suffixe in [".tar", ".zip", ".tgz"] else False
+args.output_dir = args.output_dir.replace(suffixe, "") if zip_folder else args.output_dir
+
+print(f"Output directory: {args.output_dir}")
+
 features = {
         "input"   : "PH (CBM) 1st Stage Poly Head Dev",
         "extra_1" : "PH (CBM) 1st Stage Press Rat Dev",
@@ -129,7 +144,7 @@ cv = TimeSeriesSplit(splits)
 model = MLP_v1(dataset, n_hidden=2)
 
 callbacks = [
-    pl.callbacks.EarlyStopping(monitor="val_loss", min_delta=0.00, patience=3, verbose=False, mode="min")
+    pl.callbacks.EarlyStopping(monitor="val_loss", patience=25, verbose=True, mode="min")
 ]
 
 evaluators = [
@@ -137,6 +152,12 @@ evaluators = [
     Monitor("Monitor"),
 ]
 
-trainer = Trainer(model, cv, callbacks=callbacks, evaluators=evaluators, devices="auto")
 
+
+
+trainer = Trainer(model, cv, callbacks=callbacks, evaluators=evaluators, devices="auto", output_dir=args.output_dir)
 trainer.fit(dataset, num_epochs=epochs, batch_size=batch_size, specific_fold=fold)
+
+if zip_folder:    
+    format_folder = suffixe[1:]
+    shutil.make_archive(args.output_dir, format_folder, args.output_dir)

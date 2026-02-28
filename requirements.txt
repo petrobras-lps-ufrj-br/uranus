@@ -23,3 +23,4 @@ python-multipart
 dash-cytoscape
 sktime
 mlflow
+git+https://github.com/lps-ufrj-br/maestro-lightning.git
