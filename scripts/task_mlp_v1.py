@@ -13,7 +13,7 @@ input_path = f"{basepath}/jobs"
 virtualenv = os.environ["VIRTUALENV_PATH"]
 
 envs = {
-    "MLFLOW_TRACKING_URI":"http://caloba92.lps.ufrj.br:8000"
+    #"MLFLOW_TRACKING_URI":"http://caloba92.lps.ufrj.br:8000"
 }
 
 os.makedirs(input_path, exist_ok=True)
@@ -31,7 +31,7 @@ for i in range(10):
 
 
 
-with Flow(name="tasks_mlp_v1", path=f"{basepath}/tasks_mlp_v1", virtualenv=virtualenv , partition="cpu") as session:
+with Flow(name="task_mlp_v1", path=f"{basepath}/task_mlp_v1", virtualenv=virtualenv , partition="cpu") as session:
 
 
     input_dataset   = Dataset(name="jobs", path=f"{basepath}/jobs")
